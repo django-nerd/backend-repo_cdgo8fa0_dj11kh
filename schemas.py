@@ -6,8 +6,8 @@ Use these to validate data and as the source of truth for the application domain
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional, List
-from datetime import date, datetime
+from typing import Optional
+from datetime import date, datetime, time
 
 # Core identities
 class Admin(BaseModel):
@@ -29,6 +29,12 @@ class Student(BaseModel):
     year: Optional[int] = Field(None, ge=1, le=8)
     section: Optional[str] = None
     phone: Optional[str] = None
+
+class AuthUser(BaseModel):
+    email: str
+    password_hash: str
+    role: str = Field(..., description="admin|teacher|student")
+    ref_id: Optional[str] = Field(None, description="Linked domain entity id (teacher/student/admin)")
 
 # Academic structure
 class Classroom(BaseModel):
@@ -111,3 +117,39 @@ class PerformanceReview(BaseModel):
     period: str = Field(..., description="e.g., 2024-Q1")
     score: float = Field(..., ge=0, le=5)
     feedback: Optional[str] = None
+
+# Schedules and exams
+class TimetableEntry(BaseModel):
+    class_id: str
+    day_of_week: int = Field(..., ge=0, le=6, description="0=Mon .. 6=Sun")
+    start_time: time
+    end_time: time
+    subject: str
+    teacher_id: Optional[str] = None
+    room: Optional[str] = None
+
+class Exam(BaseModel):
+    class_id: str
+    subject: str
+    date: date
+    start_time: time
+    end_time: time
+    location: Optional[str] = None
+
+# Notifications & audits
+class Notification(BaseModel):
+    title: str
+    body: str
+    channel: str = Field("inapp", description="inapp|email|sms")
+    recipient_role: Optional[str] = Field(None, description="admin|teacher|student|all")
+    recipient_id: Optional[str] = None
+    sent: bool = False
+
+class AuditLog(BaseModel):
+    user_id: Optional[str] = None
+    role: Optional[str] = None
+    action: str
+    path: str
+    method: str
+    status: int
+    ip: Optional[str] = None
